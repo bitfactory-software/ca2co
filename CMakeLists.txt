@@ -104,7 +104,7 @@ include(cmake/PackageProject.cmake)
 # we know we want to ship
 myproject_package_project(
   TARGETS
-  intro
+  co_go
   myproject_options
   myproject_warnings
   # FIXME: this does not work! CK
