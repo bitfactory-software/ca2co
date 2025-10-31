@@ -1,4 +1,4 @@
-#include <myproject/sample_library.hpp>
+#include <co_go/co_go.hpp>
 
 int factorial(int input) noexcept
 {
