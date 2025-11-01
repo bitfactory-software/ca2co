@@ -71,22 +71,45 @@ void async_api(std::function<void(int)> const& continuation) {
   auto unused = std::async(std::launch::async, [=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
+    std::println("sleep on thread {}", std::this_thread::get_id());
     continuation(42);
+    std::println("after call to continuation async_api");
   });
 }
-auto async_api_coro() { return co_go::wrap<int>(async_api); };
+co_go::continuation<int> async_api_coro() {
+  co_return co_await co_go::wrap<int>(async_api);
+};
+co_go::continuation<int> async_api_coro_indirect() {
+  auto x = co_await async_api_coro();
+  CHECK(x == 42);
+  co_return x + 1;
+};
 }  // namespace
 
 TEST_CASE("int async [continuation]") {
-  // + call callback style
-
+  auto id_start = std::this_thread::get_id();
   auto called = false;
   [&] -> co_go::continuation<void> {
     // call coro style must exist inside a coro
-    auto _42 = co_await async_api_coro();
+    auto _42 = co_await async_api_coro(); // blocks!
     std::println("recieving 42");
     called = true;
     CHECK(42 == _42);
+    CHECK(id_start == std::this_thread::get_id());
+  }();
+  CHECK(called);
+}
+
+TEST_CASE("int async indirect [continuation]") {
+  auto id_start = std::this_thread::get_id();
+  auto called = false;
+  [&] -> co_go::continuation<void> {
+    // call coro style must exist inside a coro
+    auto _43 = co_await async_api_coro_indirect();
+    std::println("recieving 43");
+    called = true;
+    CHECK(43 == _43);
+    CHECK(id_start == std::this_thread::get_id());
   }();
   CHECK(called);
 }
