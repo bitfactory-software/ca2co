@@ -1,7 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
+#include <chrono>
 #include <co_go/continuation.hpp>
 #include <co_go/resource.hpp>
 #include <functional>
+#include <future>
 #include <print>
 
 namespace {
@@ -64,6 +66,31 @@ TEST_CASE("int [continuation]") {
   }();
 }
 
+namespace {
+void async_api(std::function<void(int)> const& continuation) {
+  auto unused = std::async(std::launch::async, [=] {
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(10ms);
+    continuation(42);
+  });
+}
+auto async_api_coro() { return co_go::wrap<int>(async_api); };
+}  // namespace
+
+TEST_CASE("int async [continuation]") {
+  // + call callback style
+
+  auto called = false;
+  [&] -> co_go::continuation<void> {
+    // call coro style must exist inside a coro
+    auto _42 = co_await async_api_coro();
+    std::println("recieving 42");
+    called = true;
+    CHECK(42 == _42);
+  }();
+  CHECK(called);
+}
+
 TEST_CASE("void [continuation]") {
   // + app callback style
   step = 1;
@@ -91,7 +118,6 @@ std::mutex m;
 const bool mt_run = true;
 
 TEST_CASE("simple [resource]") {
-
   try {
     auto lg{[&](bool log) -> co_go::resource<std::mutex> {
       if (log) std::println("Before locking");
@@ -106,7 +132,6 @@ TEST_CASE("simple [resource]") {
 }
 
 TEST_CASE("throw [resource]") {
-
   try {
     auto lg{[&](bool log) -> co_go::resource<std::mutex> {
       if (log) std::println("Before locking");
