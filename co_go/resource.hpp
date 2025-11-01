@@ -19,7 +19,7 @@ class resource {
   resource(resource&& from) : coro_(std::exchange(from.coro_, nullptr)) {}
   resource& operator=(resource&& from) {
     std::destroy_at(this);
-    std__construct_at(this, std::move(from));
+    std::construct_at(this, std::move(from));
     return *this;
   }
 
