@@ -3,20 +3,17 @@
 #include <mutex>
 #include <print>
 
-namespace {
-std::mutex m;
-const bool mt_run = true;
-}  // namespace
-
 TEST_CASE("simple [resource]") {
+  std::mutex mutex;
+  const bool mt_run = true;
   bool run = false;
   bool catched = false;
   try {
-    auto lg{[&](bool log) -> co_go::resource<std::mutex> {
+    [[maybe_unused]] auto logger{[&](bool log) -> co_go::resource<std::mutex> {
       if (log) std::println("Before locking");
-      if (mt_run) m.lock();
-      co_yield m;
-      if (mt_run) m.unlock();
+      if (mt_run) mutex.lock();
+      co_yield mutex;
+      if (mt_run) mutex.unlock();
       if (log) std::println("After locking");
     }(true)};
     std::println("process...");
@@ -29,19 +26,21 @@ TEST_CASE("simple [resource]") {
 }
 
 TEST_CASE("throw [resource]") {
+  std::mutex mutex;
+  const bool mt_run = true;
   bool run = false;
   bool catched = false;
   try {
-    auto lg{[&](bool log) -> co_go::resource<std::mutex> {
+    [[maybe_unused]] auto logger{[&](bool log) -> co_go::resource<std::mutex> {
       if (log) std::println("Before locking");
-      if (mt_run) m.lock();
-      co_yield m;
-      if (mt_run) m.unlock();
+      if (mt_run) mutex.lock();
+      co_yield mutex;
+      if (mt_run) mutex.unlock();
       if (log) std::println("After locking");
     }(true)};
     throw 0;
-    //std::println("process...");  // unreachable code
-    //run = true;// unreachable code
+    // std::println("process...");  // unreachable code
+    // run = true;// unreachable code
   } catch (...) {
     catched = true;
   }

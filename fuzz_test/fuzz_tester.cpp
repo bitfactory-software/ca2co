@@ -1,7 +1,7 @@
 #include <cstddef>
 #include <cstdint>
-#include <fmt/base.h>
 #include <iterator>
+#include <format>
 
 [[nodiscard]] auto sum_values(const uint8_t *Data, size_t Size)
 {
@@ -18,6 +18,6 @@
 // cppcheck-suppress unusedFunction symbolName=LLVMFuzzerTestOneInput
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
-  fmt::print("Value sum: {}, len{}\n", sum_values(Data, Size), Size);
+  std::println("Value sum: {}, len{}\n", sum_values(Data, Size), Size);
   return 0;
 }

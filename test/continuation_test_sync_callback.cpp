@@ -10,7 +10,7 @@ namespace {
 int step = 1;
 
 // + lib callback style
-void int_callback_api(std::function<void(int)> callback) {
+void int_callback_api(std::function<void(int)> const& callback) {
   std::println("before callback");
   callback(42);
   std::println("after callback");
@@ -27,7 +27,7 @@ co_go::continuation<int> int_recieve_coro_indirect() {
 // - lib wrapped for coro style
 
 // + lib callback style
-auto void_callback_api(std::function<void(void)> callback) {
+auto void_callback_api(std::function<void(void)> const& callback) {
   std::println("before callback");
   CHECK(step++ == 1);
   callback();

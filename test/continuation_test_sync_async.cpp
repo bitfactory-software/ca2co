@@ -9,11 +9,11 @@
 
 namespace {
 namespace fixture {
-std::thread t;
+std::thread a_thread;
 bool continuations_run = false;
 
 void api_async(const std::function<void(int)>& callback) {
-  t = std::thread([=] {
+  a_thread = std::thread([=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
     callback(41);
@@ -144,7 +144,7 @@ TEST_CASE("SynchronWithException") {
 TEST_CASE("AsynchronWithException") {
   {
     dont_await(fixture::test_5_catched(&fixture::test_1_async_with_exception));
-    fixture::t.join();
+    fixture::a_thread.join();
   }
   CHECK(co_go::continuation_promise_count == 0);
 }
@@ -156,7 +156,7 @@ TEST_CASE("Asynchron") {
   }
   CHECK(!fixture::continuations_run);
   std::println("main after test_4");
-  fixture::t.join();
+  fixture::a_thread.join();
   CHECK(fixture::continuations_run);
   std::println("after join");
   CHECK(co_go::continuation_promise_count == 0);

@@ -6,14 +6,19 @@
         "patch": 0
     },
     "configurePresets": [
-        {
-            "name": "conf-common",
-            "description": "General settings that apply to all configurations",
-            "hidden": true,
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}"
-        },
+      {
+        "name": "conf-common",
+        "description": "General settings that apply to all configurations",
+        "hidden": true,
+        "generator": "Ninja",
+        "binaryDir": "${sourceDir}/out/build/${presetName}",
+        "installDir": "${sourceDir}/out/install/${presetName}",
+        "cacheVariables": {
+          "cogoproject_ENABLE_CPPCHECK": false,
+          "cogoproject_ENABLE_CLANG_TIDY": false
+        }
+
+      },
         {
             "name": "conf-windows-common",
             "description": "Windows settings for MSBuild toolchain that apply to msvc and clang",
