@@ -8,12 +8,12 @@
 
 Our product had its origin as a classic Windows application. In that envirionmet you can write great parts of the user interface in a sequetial manner via 'modal dialogs'. That looks like this:
 
-'''
+```cpp
 ...
 if (AfxMessageBox("Continue?", MB_YESNO) != MB_YES)
   return;
 ... // continue(!) with further processing
-'''
+```
 
 
 
