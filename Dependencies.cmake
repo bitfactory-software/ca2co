@@ -9,6 +9,7 @@ function(cogoproject_setup_dependencies is_top_level)
   # already been provided to us by a parent project
 
   if(NOT is_top_level)
+    message("co_go -> no dependecies required")
     return()
   endif()
 
