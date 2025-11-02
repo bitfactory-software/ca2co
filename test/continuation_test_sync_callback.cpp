@@ -1,7 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>
 #include <co_go/continuation.hpp>
-#include <co_go/resource.hpp>
 #include <functional>
 #include <future>
 #include <print>
