@@ -1,3 +1,16 @@
+# co_go: Opaque First-Class Continuation Coroutines for C++
+
+Write clean **sequential** code — run it on **callback-based** asynchronous systems.
+
+`co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**.
+
+✔ Keep linear control flow (`if`, `for`, exceptions)
+✔ Decouple business logic from UI/network async APIs
+✔ Works with **any** callback-based API — no specific framework required
+✔ No thread switching — resumes where the callback runs
+
+---
+
 # co_go: An opaque C++ first-class continuation coroutine
 
 ## Why `co_go::continuation`?
@@ -125,19 +138,87 @@ That means:
 
 cppcoro does **not** provide:
 
-| Feature                                           |        cppcoro::task        | co_go::continuation |
-| ------------------------------------------------- | :-------------------------: | :-----------------: |
-| Externally resumable continuation (opaque handle) |              ❌              |          ✅          |
-| Suspend waiting on UI/user callback               | ⚠️ custom bridging required |      ✅ built-in     |
-| Portable control-flow abstraction                 |              ❌              |          ✅          |
-| UI-focused async design                           |              ❌              |          ✅          |
+| Feature                                           | cppcoro::task               | co_go::continuation |
+| ------------------------------------------------- | --------------------------- | ------------------- |
+| Externally resumable continuation (opaque handle) | ❌                           | ✅                   |
+| Suspend waiting on UI/user callback               | ⚠️ custom bridging required | ✅ built-in          |
+| Portable control-flow abstraction                 | ❌                           | ✅                   |
+|                                                   |                             |                     |
 
-### Summary
+### Porting Synchronous APIs to Asynchronous Callback APIs
 
-> cppcoro is about async tasks.
-> co_go is about **portable UI-driven suspend/resume**.
+`co_go::continuation` is not limited to UI workflows.
+It can be used to modernize **any** blocking API — such as networking, filesystem, or communication protocols.
 
-They solve **complementary but distinct** problems.
+A typical migration:
+
+1️⃣ Wrap existing synchronous APIs using `co_go::continuation`
+2️⃣ Update business logic to use `co_await`
+3️⃣ Replace the underlying implementation with async callbacks
+
+---
+
+### Example: Converting a synchronous network protocol
+
+#### Step 1 — Existing blocking API
+
+```cpp
+std::string send_request_sync(std::string const& request)
+{
+    socket.write(request);
+    return socket.read(); // blocking
+}
+```
+
+#### Step 2 — Wrap API using `co_go::continuation`
+
+```cpp
+co_go::continuation<std::string>
+co_send_request(std::string const& request)
+{
+    co_return send_request_sync(request);
+}
+```
+
+#### Step 3 — Application logic becomes linear async
+
+```cpp
+co_go::continuation<void> protocol_flow()
+{
+    auto hello = co_await co_send_request("HELLO");
+    if (hello != "OK")
+        co_return;
+
+    auto data = co_await co_send_request("GET DATA");
+    process(data);
+    co_return;
+}
+```
+
+#### Step 4 — Replace backend with async callback API
+
+```cpp
+void send_request_async(
+    std::string request,
+    std::function<void(std::string)> callback);
+```
+
+Updated wrapper:
+
+```cpp
+co_go::continuation<std::string>
+co_send_request(std::string const& request)
+{
+    using namespace std::placeholders;
+    co_return co_await co_go::await_callback_async<std::string>(
+        std::bind(send_request_async, request, _1)
+    );
+}
+```
+
+✅ Business logic requires **no changes**
+✅ Underlying transport switches from sync → async
+✅ The same coroutine flow now runs without blocking
 
 ---
 
@@ -219,6 +300,4 @@ This means:
 
 This allows integration with Qt/QML, Win32, and other event-loop environments **without forcing a specific threading model**.
 
-If thread marshalling is required (e.g. enforcing GUI-thread only),
-this should be handled by the UI framework or a helper layer.
-
+---
