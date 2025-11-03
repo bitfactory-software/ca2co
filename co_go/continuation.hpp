@@ -48,6 +48,10 @@ class continuation {
     std::exception_ptr exception_ = {};
     bool sync_ = true;
     bool awaited_ = true;
+    void orphan(this auto& self) {
+      if (calling_coroutine_) calling_coroutine_.orphan();
+      std::coroutine_handle::from_promise(self).destroy();
+    }
   };
   template <typename R>
   struct handle_return {
@@ -146,17 +150,22 @@ struct continuation_awaiter<void, Api, sync> {
       called = true;
       calling_continuation.resume();
     });
+    if (!called) calling_continuation.promise().orphan();
   }
   void await_resume() {}
   const Api api_;
 };
 template <typename R, typename Api, bool sync = true>
-auto await_callback(Api&& api) {
+auto await_callback(Api&& api)
+  requires(!std::same_as<R, void>)
+{
   return continuation_awaiter<R, std::decay_t<Api>, sync>{std::move(api)};
 }
 
 template <typename R, typename Api>
-auto await_callback_async(Api&& api) {
+auto await_callback_async(Api&& api)
+  requires(!std::same_as<R, void>)
+{
   return await_callback<R, Api, false>(std::move(api));
 }
 

@@ -33,10 +33,6 @@ auto void_callback_api(std::function<void(void)> const& callback) {
   std::println("after callback");
   CHECK(step++ == 3);
 };
-// - lib callback style
-// + lib wrapped for coro style
-auto void_recieve_coro() { return co_go::await_callback<void>(void_callback_api); };
-// - lib wrapped for coro style
 
 }  // namespace
 
@@ -111,26 +107,4 @@ TEST_CASE("int async [continuation]") {
     CHECK(id_start == std::this_thread::get_id());
   }();
   CHECK(called);
-}
-
-TEST_CASE("void [continuation]") {
-  // + app callback style
-  step = 1;
-  CHECK(step == 1);
-  void_callback_api([&] {
-    std::println("recieving");
-    CHECK(step++ == 2);
-  });
-  CHECK(step == 4);
-  // - app callback style
-
-  step = 1;
-  [&] -> co_go::continuation<void> {
-    // + app coro style must exist inside a coro
-    co_await void_recieve_coro();
-    std::println("recieving void");
-    CHECK(step++ == 2);
-    // - app coro style
-  }();
-  CHECK(step == 4);
 }

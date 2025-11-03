@@ -1,6 +1,6 @@
 include(GenerateExportHeader)
 
-add_library(co_go INTERFACE continuation.hpp "resource.hpp")
+add_library(co_go INTERFACE continuation.hpp)
 add_library(cogoproject::co_go ALIAS co_go)
 
 target_link_libraries(co_go INTERFACE cogoproject_options cogoproject_warnings)

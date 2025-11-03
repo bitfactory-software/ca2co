@@ -20,6 +20,13 @@ void api_async(const std::function<void(int)>& callback) {
   });
 }
 
+void api_async_callback_no_called([[maybe_unused]]const std::function<void(int)>& callback) {
+  a_thread = std::thread([=] {
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(10ms);
+  });
+}
+
 co_go::continuation<int> test_1_async() {
   int initalValue = 1;
   std::println("Start test_1_async");
@@ -149,6 +156,15 @@ TEST_CASE("AsynchronWithException") {
   CHECK(co_go::continuation_promise_count == 0);
 }
 
+TEST_CASE("api_async_callback_no_called") {
+  CHECK(co_go::continuation_promise_count == 0);
+  [[maybe_unused]] auto _ = [] -> co_go::continuation<> {
+        co_await co_go::await_callback_async<int>(fixture::api_async_callback_no_called);
+  }();
+  fixture::a_thread.join();
+  CHECK(co_go::continuation_promise_count == 0);
+}
+
 TEST_CASE("Asynchron") {
   {
     fixture::continuations_run = false;
@@ -168,7 +184,7 @@ TEST_CASE("MoveConstructContinuation") {
   co_go::continuation<> movedTo(std::move(original));
 #pragma warning(push)
 #pragma warning(disable : 26800)
-  CHECK(!original.coroutine()); // moved from
+  CHECK(!original.coroutine());  // moved from
 #pragma warning(pop)
   CHECK(movedTo.coroutine());
 }
