@@ -215,7 +215,7 @@ run_flow(); // automatically starts and resumes on the UI thread
 
 * Exceptions thrown inside the coroutine propagate through `co_await`.
 * UI-side cancellations (e.g. dialog closed) should resume with a special value.
-* because the callback can only revieve on parameter, you must pack an error code into a struct, tuple or a std::expect 
+* because the callback can only recieve one parameter, you must pack an error code into a struct, tuple or a std::expect 
 
 Example:
 
