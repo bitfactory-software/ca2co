@@ -9,19 +9,26 @@
 
 namespace {
 namespace fixture {
+auto func1(std::function<void(int)> const& callback) noexcept(false) -> void;
+auto func2(std::function<void(int)> const& callback) noexcept -> void;
+
+static_assert(!co_go::is_noexept_callback_api<int, decltype(func1)>);
+static_assert(co_go::is_noexept_callback_api<int, decltype(func2)>);
+
 std::thread a_thread;
 bool continuations_run = false;
 
-void api_async(const std::function<void(int)>& callback) {
+void api_async(const std::function<void(int)>& callback) noexcept {
   a_thread = std::thread([=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
     callback(41);
   });
 }
+static_assert(co_go::is_noexept_callback_api<int, decltype(api_async)>);
 
 void api_async_callback_no_called(
-    [[maybe_unused]] const std::function<void(int)>& callback) {
+    [[maybe_unused]] const std::function<void(int)>& callback) noexcept {
   a_thread = std::thread([=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);

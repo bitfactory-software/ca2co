@@ -1,5 +1,6 @@
 #include <coroutine>
 #include <exception>
+#include <functional>
 
 namespace co_go {
 
@@ -118,7 +119,17 @@ class continuation {
   bool is_sync() const { return coroutine_.promise().sync_; }
 };
 
+template <typename R, typename Api>
+constexpr bool is_noexept_callback_api_v =
+    noexcept(std::declval<Api>()(std::declval<void (*)(R const&) noexcept>()));
+
+template <typename R, typename Api>
+concept is_noexept_callback_api =
+    (!std::same_as<R, void>) &&
+    std::is_nothrow_invocable_r_v<void, Api, std::function<void(R)>>;
+
 template <typename R, typename Api, bool sync = true>
+  requires(is_noexept_callback_api<R, Api>)
 struct continuation_awaiter {
   bool await_ready() { return false; }
   void await_suspend(auto calling_coroutine) {
@@ -137,14 +148,15 @@ struct continuation_awaiter {
 };
 template <typename R, typename Api, bool sync = true>
 auto await_callback(Api&& api)
-  requires(!std::same_as<R, void>)
+  requires is_noexept_callback_api<R, Api>
 {
   return continuation_awaiter<R, std::decay_t<Api>, sync>{std::move(api)};
 }
 
 template <typename R, typename Api>
 auto await_callback_async(Api&& api)
-  requires(!std::same_as<R, void>)
+  requires is_noexept_callback_api<R, Api>
+
 {
   return await_callback<R, Api, false>(std::move(api));
 }

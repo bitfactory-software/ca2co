@@ -9,14 +9,16 @@ namespace {
 int step = 1;
 
 // + lib callback style
-void int_callback_api(std::function<void(int)> const& callback) {
+void int_callback_api(std::function<void(int)> const& callback) noexcept {
   std::println("before callback");
   callback(42);
   std::println("after callback");
 };
 // - lib callback style
 // + lib wrapped for coro style
-auto int_recieve_coro() { return co_go::await_callback<int>(int_callback_api); };
+auto int_recieve_coro() {
+  return co_go::await_callback<int>(int_callback_api);
+};
 // - lib wrapped for coro style
 co_go::continuation<int> int_recieve_coro_indirect() {
   auto x = co_await co_go::await_callback<int>(int_callback_api);
@@ -62,7 +64,7 @@ TEST_CASE("int [continuation]") {
 }
 
 namespace {
-void async_api(std::function<void(int)> const& continuation) {
+void async_api(std::function<void(int)> const& continuation) noexcept {
   auto unused = std::async(std::launch::async, [=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
@@ -86,7 +88,7 @@ TEST_CASE("int async [continuation]") {
   auto called = false;
   [&] -> co_go::continuation<void> {
     // call coro style must exist inside a coro
-    auto _42 = co_await async_api_coro(); // blocks!
+    auto _42 = co_await async_api_coro();  // blocks!
     std::println("recieving 42");
     called = true;
     CHECK(42 == _42);
@@ -95,7 +97,7 @@ TEST_CASE("int async [continuation]") {
   CHECK(called);
 }
 
- TEST_CASE("int async indirect [continuation]") {
+TEST_CASE("int async indirect [continuation]") {
   auto id_start = std::this_thread::get_id();
   auto called = false;
   [&] -> co_go::continuation<void> {
