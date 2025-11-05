@@ -1,6 +1,6 @@
 # co_go: Opaque First-Class Continuation Coroutine for C++
 
-Write clean **sequential** code — run it on **callback-based** asynchronous systems.
+Write clean **sequential** code — run it on **callback-based** synchronous and asynchronous systems.
 
 `co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**.
 
