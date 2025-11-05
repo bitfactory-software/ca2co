@@ -4,6 +4,19 @@ Write clean **sequential** code — run it on **callback-based** synchronous and
 
 `co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**.
 
+
+```cpp
+// ✔ Legacy API — either sync OR async, we don't care.
+void legacy_sync_or_async_op(std::function<void(std::string)> const& callback) noexcept;
+
+// ✔ New coroutine wrapper
+co_go::continuation<std::string> co_op()
+{
+    // co_go transforms callback into an awaitable continuation
+    co_return co_await co_go::await_callback<std::string, co_go::synchronisation::sync/* or async*/>(legacy_sync_or_async_op);
+}
+```
+
 * ✅ Keep linear control flow (`if`, `for`, exceptions)
 * ✅ Decouple business logic from UI/network async APIs
 * ✅ Works with **any** callback-based API — no specific framework required
