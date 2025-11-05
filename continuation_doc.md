@@ -1,4 +1,6 @@
-﻿# co_go::continuation — design and sequence examples
+> AI generated and reviewd
+
+ # co_go::continuation — design and sequence examples
 
 This document explains how `co_go::continuation<R>` works and how it interacts with `continuation_awaiter` (the `await_callback` / `await_callback_async` adapter). It combines a focused explanation of the core components, the lifecycle and ownership rules, and two compact, annotated sequence examples (synchronous and asynchronous callback flows). All examples reference the implementation in `co_go/continuation.hpp`.
 
@@ -7,7 +9,7 @@ This document explains how `co_go::continuation<R>` works and how it interacts w
 ## Overview (high level)
 - `continuation<R>` is a small, move-only awaitable that wraps a coroutine handle and supports:
   - efficient synchronous completion (inline run; no extra suspension when possible), and
-  - asynchronous chaining (wiring a suspended callee to resume its awaiting caller).
+  - asynchronous and syncronous chaining (wiring a suspended callee to resume its awaiting caller).
 - `continuation_awaiter` adapts callback-style APIs into awaitables that store a result and resume the suspended coroutine when the callback fires. It explicitly marks the suspended coroutine as synchronous or asynchronous using a template `sync` parameter.
 
 ---
@@ -72,7 +74,7 @@ This document explains how `co_go::continuation<R>` works and how it interacts w
 
 ## Interplay: continuation vs continuation_awaiter (core idea)
 - `continuation_awaiter` marks the suspended coroutine's `promise().sync_` before invoking the callback API. That single flag determines whether an outer awaiter will:
-  - treat the callee as synchronous and resume immediately (no chain), or
+  - treat the callee as synchronous and resume immediately (no chain). This **converts a synchronous callback** into a `co_await`able.
   - form an asynchronous chain so the callee later resumes the caller via `calling_coroutine_`.
 - `build_async_chain` wires `calling_coroutine_` into the callee's promise and marks the caller's `sync_` false to avoid premature destruction.
 - `final_suspend` (`await_continuation`) on the callee resumes `calling_coroutine_` when the callee completes; `awaited_` and `sync_` together control safe destruction and ownership.
@@ -115,7 +117,7 @@ Key states:
 ### 2) Asynchronous callback (callback invoked later; use `await_callback_async`)
 Actors:
 - A = outer coroutine that `co_await`s B()
-- B = inner coroutine using `await_callback_async` (`sync = false`)
+- B = inner coroutine using `await_callback_async`
 - API = async callback provider (invokes cb later)
 
 Sequence:
