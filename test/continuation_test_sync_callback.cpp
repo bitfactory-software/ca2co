@@ -19,11 +19,11 @@ void int_callback_api(std::function<void(int)> const& callback) noexcept {
 // - lib callback style
 // + lib wrapped for coro style
 auto int_recieve_coro() {
-  return co_go::await_callback<int>(int_callback_api);
+  return co_go::await_callback_sync<int>(int_callback_api);
 };
 // - lib wrapped for coro style
 co_go::continuation<int> int_recieve_coro_indirect() {
-  auto x = co_await co_go::await_callback<int>(int_callback_api);
+  auto x = co_await co_go::await_callback_sync<int>(int_callback_api);
   std::println("int_recieve_coro_indirect after callback {}", x);
   co_return x + 1;
 };
@@ -67,7 +67,7 @@ void async_api(std::function<void(int)> const& continuation) noexcept {
   });
 }
 co_go::continuation<int> async_api_coro() {
-  co_return co_await co_go::await_callback<int>(async_api);
+  co_return co_await co_go::await_callback_sync<int>(async_api);
 };
 co_go::continuation<int> async_api_coro_indirect() {
   auto x = co_await async_api_coro();

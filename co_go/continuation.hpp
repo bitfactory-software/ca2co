@@ -128,12 +128,15 @@ concept is_noexept_callback_api =
     (!std::same_as<R, void>) &&
     std::is_nothrow_invocable_r_v<void, Api, std::function<void(R)>>;
 
-template <typename R, typename Api, bool sync = true>
+enum class synchronisation { sync, async };
+
+template <typename R, typename Api,
+          synchronisation sync_or_async = synchronisation::sync>
   requires(is_noexept_callback_api<R, Api>)
 struct continuation_awaiter {
   bool await_ready() { return false; }
   void await_suspend(auto calling_coroutine) {
-    calling_coroutine.promise().sync_ = sync;
+    calling_coroutine.promise().sync_ = sync_or_async == synchronisation::sync;
     bool called = false;
     api_([this, calling_coroutine, called](const R& r) mutable {
       if (called) return;
@@ -146,18 +149,27 @@ struct continuation_awaiter {
   const Api api_;
   R result_ = {};
 };
-template <typename R, typename Api, bool sync = true>
+
+template <typename R, synchronisation sync_or_async, typename Api>
 auto await_callback(Api&& api)
   requires is_noexept_callback_api<R, Api>
 {
-  return continuation_awaiter<R, std::decay_t<Api>, sync>{std::move(api)};
+  return continuation_awaiter<R, std::decay_t<Api>, sync_or_async>{
+      std::move(api)};
+}
+
+template <typename R, typename Api>
+auto await_callback_sync(Api&& api)
+  requires is_noexept_callback_api<R, Api>
+{
+  return await_callback<R, synchronisation::sync, Api>(std::move(api));
 }
 
 template <typename R, typename Api>
 auto await_callback_async(Api&& api)
   requires is_noexept_callback_api<R, Api>
 {
-  return await_callback<R, Api, false>(std::move(api));
+  return await_callback<R, synchronisation::async, Api>(std::move(api));
 }
 
 template <typename R>

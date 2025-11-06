@@ -1,8 +1,33 @@
-# co_go: Opaque First-Class Continuation Coroutine for C++
+# co_go: Opaque Continuation Coroutine for C++
 
-Write clean **sequential** code — run it on **callback-based** asynchronous systems.
+Write clean **sequential** code — run it on **callback-based** synchronous and asynchronous systems.
 
-`co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**.
+`co_go::continuation` enables porting classic **blocking** code (UI, networking, filesystem, protocols) into event-driven architectures **without rewriting logic into callbacks**:
+
+```cpp
+// ✔ Sync blocking API.
+std::string blocking_api();
+
+// ✔ Callback API — either sync OR async, we don't care.
+void sync_or_async_callback_api(std::function<void(std::string)> const& callback) noexcept;
+
+// ✔ Continuation coroutine wrapper
+co_go::continuation<std::string> any_api(bool use_blocking_api)
+{
+    if (use_blocking_api) {
+        co_return blocking_api();
+    } else {
+        // co_go transforms callback into an awaitable continuation
+        auto sync_mode = co_go::synchronisation::sync; // .. OR async: as you like!
+        co_return co_await co_go::await_callback<std::string, sync_mode>(sync_or_async_callback_api);
+    }
+}
+
+co_go::spawn([]->co_go::continuation<>{
+    auto answer = co_await co_op();
+    process( answer);
+}); 
+```
 
 * ✅ Keep linear control flow (`if`, `for`, exceptions)
 * ✅ Decouple business logic from UI/network async APIs
@@ -11,7 +36,7 @@ Write clean **sequential** code — run it on **callback-based** asynchronous sy
 
 ---
 
-## Why `co_go::continuation`?
+## Why we made `co_go::continuation`?
 
 Our product originated as a classic Windows application. In that environment, user interface logic often used **modal dialogs**, making code naturally **sequential**:
 
@@ -41,22 +66,6 @@ if (co_await show_message_box("Continue?", {"Yes", "No"}) != "Yes")
     co_return;
 // continue(!) with further processing
 ```
-
----
-
-### ✅ Key Advantages
-
-`co_go::continuation<T>` provides:
-
-* ✅ Suspend & resume anywhere including on the UI thread
-* ✅ Zero callback nesting → linear readable control flow
-* ✅ One coroutine API supports both modal and async UI
-* ✅ GUI event loop compatible (Qt/QML/etc.)
-* ✅ Ideal migration path for large legacy codebases
-
-You change **the implementation**, not **the caller**.
-
----
 
 ### Portable Implementations
 
@@ -88,8 +97,33 @@ co_show_message_box(std::string const& prompt,
     );
 }
 ```
-
 Here, `_1` represents the callback that `await_callback_async` uses to resume the coroutine with the result.
+
+### ✅ Key Advantages
+
+`co_go::continuation<T>` provides:
+
+* ✅ Suspend & resume anywhere including on the UI thread
+* ✅ Zero callback nesting → linear readable control flow
+* ✅ One coroutine API supports both modal and async UI
+* ✅ GUI event loop compatible (Qt/QML/etc.)
+* ✅ Ideal migration path for large legacy codebases
+
+You change **the implementation**, not **the caller**.
+
+---
+
+---
+
+## Comparison to other C++20 coroutine libraries
+
+| Library                                             | Primary Focus / Design Goal | Special Strength | Lazy vs Eager Execution | I/O / Executor Integration | Multi-Thread / Parallelism | Interop Difficulty w/ Legacy Callbacks |
+|-----------------------------------------------------|-----------------------------|------------------|-------------------------|----------------------------|----------------------------|----------------------------------------|
+| co_go                                               | Turn *callback-based (a)sync* APIs into `co_await` | ✅ Callback → `co_await` bridge | depends on callback | depends on wrapped API | depends on wrapped API | very easy; core purpose |
+| [Boost.Cobalt](https://github.com/boostorg/cobalt)  | Coroutine-enabled async I/O with Boost.Asio | High-level async I/O primitives | mostly *eager* | excellent Asio integration | controlled / single-thread exec | no example found |
+| [cppcoro](https://github.com/lewissbaker/cppcoro)   | Generic coroutine primitives & algorithms | Flexible coroutine building blocks | mostly *lazy* | generic & plug-in friendly | moderate | no example found |
+| [libcoro](https://github.com/jbaldwin/libcoro)      |  Multi-threaded async runtime with schedulers + I/O | Large-scale parallel coroutine runtime | depends on awaitable | built-in I/O & schedulers | strong thread-pool parallelism | no example found |
+
 
 ---
 
