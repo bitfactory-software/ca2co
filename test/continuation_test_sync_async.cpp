@@ -212,10 +212,10 @@ TEST_CASE("api_async_callback_no_called") {
     fixture::a_thread.join();
     CHECK(!resumed);
   }
-  //CHECK(co_go::continuation_promise_count ==
-  //      1);   // <- CAN LEAK, because callback not invoked!
-  //            // depends, on management in of threadpool....
-  //            // 
+  CHECK(co_go::continuation_promise_count ==
+        0);   // <- CAN LEAK, because callback not invoked!
+              // depends, on management in of threadpool....
+              // 
   co_go::continuation_promise_count = 0;
 }
 

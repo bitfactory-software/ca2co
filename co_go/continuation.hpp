@@ -72,15 +72,28 @@ class continuation {
     std::exception_ptr exception_ = {};
     bool sync_ = true;
     bool awaited_ = true;
+    void destroy_if_not_awaited(auto& coroutine) {
+      if (!awaited_) coroutine.destroy();
+    }
   };
   template <typename... Rs>
-  struct handle_return;
+  struct handle_return {
+    void return_value(this auto& self, std::tuple<Rs...> result) {
+      self.result_ = std::move(result);
+    }
+    auto return_result(this auto& self, auto& coroutine) {
+      auto result = std::move(self.result_);
+      self.destroy_if_not_awaited(coroutine);
+      return result;
+    }
+    std::tuple<Rs...> result_ = {};
+  };
   template <typename Ret>
   struct handle_return<Ret> {
     void return_value(Ret result) { result_ = std::move(result); }
     auto return_result(this auto& self, auto& coroutine) {
       auto result = std::move(self.result_);
-      if (!self.awaited_) coroutine.destroy();
+      self.destroy_if_not_awaited(coroutine);
       return result;
     }
     Ret result_ = {};
@@ -89,7 +102,7 @@ class continuation {
   struct handle_return<> {
     void return_void() {};
     auto return_result(this auto& self, auto& coroutine) {
-      if (!self.awaited_) coroutine.destroy();
+      self.destroy_if_not_awaited(coroutine);
     }
   };
 
@@ -184,7 +197,8 @@ template <synchronisation sync_or_async, typename... CallbackArgs>
 auto callback(auto&& api) {
   using api_t = decltype(api);
   return continuation_awaiter<sync_or_async, std::decay_t<api_t>,
-                              CallbackArgs...>{std::forward<api_t>(api)};
+                                          CallbackArgs...>{
+      std::forward<api_t>(api)};
 }
 
 template <typename... CallbackArgs>

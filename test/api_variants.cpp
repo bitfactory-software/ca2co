@@ -43,37 +43,60 @@
 //
 namespace {
 namespace fixture {
+
+std::thread a_thread;
+
 void async_api_string_view_int(
     std::function<void(std::string_view, int)> callback) noexcept {
-  auto unused = std::async(std::launch::async, [=] {
+  a_thread = std::thread{[=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
     std::println("sleep on thread {}", std::this_thread::get_id());
     callback("hello world", 42);
     std::println("after call to continuation async_api");
-  });
+  }};
 }
-  void async_api_bool_double_to_string_view_int(
-      bool, int, std::function<void(std::string_view, int)> callback) noexcept {
-    auto unused = std::async(std::launch::async, [=] {
-      using namespace std::chrono_literals;
-      std::this_thread::sleep_for(10ms);
-      std::println("sleep on thread {}", std::this_thread::get_id());
-      callback("hello world", 42);
-      std::println("after call to continuation async_api");
-    });
-  }
 
-  static_assert(
-      !co_go::is_noexept_callback_api_v<decltype(async_api_string_view_int),
-                                        std::tuple<std::string_view, int>>);
-  static_assert(
-      co_go::is_noexept_callback_api_v<decltype(async_api_string_view_int),
-                                       std::string_view, int>);
+co_go::continuation<std::string_view, int> co_async_api_string_view_int() {
+  co_return co_await co_go::callback_async<std::string_view, int>(
+      fixture::async_api_string_view_int);
+};
+
+co_go::continuation<std::string_view, int> co_sync_api_string_view_int() {
+  co_return std::make_tuple<std::string_view, int>(std::string_view("xy"), 2);
+}
+
+void async_api_bool_double_to_string_view_int(
+    bool, int, std::function<void(std::string_view, int)> callback) noexcept {
+  a_thread = std::thread{[=] {
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(10ms);
+    std::println("sleep on thread {}", std::this_thread::get_id());
+    callback("hello world", 42);
+    std::println("after call to continuation async_api");
+  }};
+}
+
+static_assert(
+    !co_go::is_noexept_callback_api_v<decltype(async_api_string_view_int),
+                                      std::tuple<std::string_view, int>>);
+static_assert(co_go::is_noexept_callback_api_v<
+              decltype(async_api_string_view_int), std::string_view, int>);
 }  // namespace fixture
 }  // namespace
 
-TEST_CASE("async_api_string_view_int") {
+TEST_CASE("sync_api_string_view_int") {
+  auto called = false;
+  [&] -> co_go::continuation<> {
+    auto [s, i] = co_await fixture::co_sync_api_string_view_int();
+    CHECK(s == "xy");
+    CHECK(i == 2);
+    called = true;
+  }();
+  CHECK(called);
+}
+
+TEST_CASE("async_api_string_view_int direct") {
   auto called = false;
   [&] -> co_go::continuation<> {
     auto [s, i] = co_await co_go::callback_async<std::string_view, int>(
@@ -82,17 +105,30 @@ TEST_CASE("async_api_string_view_int") {
     CHECK(i == 42);
     called = true;
   }();
+  fixture::a_thread.join();
   CHECK(called);
 }
 
-//TEST_CASE("async_api_bool_double_to_string_view_int") {
-//  auto called = false;
-//  [&] -> co_go::continuation<> {
-//    auto [s, i] = co_await co_go::callback_async<std::string_view, int>(
-//        fixture::async_api_bool_double_to_string_view_int, true, 3.14);
-//    CHECK(s == "hello world");
-//    CHECK(i == 42);
-//    called = true;
-//  }();
-//  CHECK(called);
-//}
+TEST_CASE("async_api_string_view_int indirect") {
+  auto called = false;
+  [&] -> co_go::continuation<> {
+    auto [s, i] = co_await fixture::co_async_api_string_view_int();
+    CHECK(s == "hello world");
+    CHECK(i == 42);
+    called = true;
+  }();
+  fixture::a_thread.join();
+  CHECK(called);
+}
+
+// TEST_CASE("async_api_bool_double_to_string_view_int") {
+//   auto called = false;
+//   [&] -> co_go::continuation<> {
+//     auto [s, i] = co_await co_go::callback_async<std::string_view, int>(
+//         fixture::async_api_bool_double_to_string_view_int, true, 3.14);
+//     CHECK(s == "hello world");
+//     CHECK(i == 42);
+//     called = true;
+//   }();
+//   CHECK(called);
+// }
