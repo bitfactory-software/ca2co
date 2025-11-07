@@ -75,7 +75,7 @@ void async_api_string_view_int(
 
 TEST_CASE("async_api_string_view_int") {
   auto called = false;
-  [&] -> co_go::continuation<void> {
+  [&] -> co_go::continuation<> {
     auto [s, i] = co_await co_go::callback_async<std::string_view, int>(
         fixture::async_api_string_view_int);
     CHECK(s == "hello world");

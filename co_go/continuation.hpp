@@ -8,7 +8,30 @@ namespace co_go {
 static int continuation_promise_count = 0;
 #endif
 
-template <typename R = void>
+template <typename... Args>
+struct result_t_impl {
+  using type = std::tuple<Args...>;
+  static auto make(Args... args) {
+    return std::make_tuple(std::forward<Args>(args)...);
+  }
+  static auto default_value() { return type{}; }
+};
+template <typename Arg>
+struct result_t_impl<Arg> {
+  using type = Arg;
+  static auto make(Arg arg) { return std::forward<Arg>(arg); }
+  static auto default_value() { return type{}; }
+};
+template <>
+struct result_t_impl<> {
+  using type = void;
+  static auto make() { return; }
+  static auto default_value() { return; }
+};
+template <typename... Args>
+using result_t = result_t_impl<Args...>;
+
+template <typename... Args>
 class continuation {
   static void build_async_chain(auto suspended_coroutine,
                                 auto calling_coroutine) {
@@ -23,8 +46,8 @@ class continuation {
     ~basic_promise_type() noexcept { --continuation_promise_count; }
 #endif
 
-    continuation<R> get_return_object(this auto& self) {
-      return continuation<R>{
+    continuation<Args...> get_return_object(this auto& self) {
+      return continuation<Args...>{
           std::coroutine_handle<basic_promise_type>::from_promise(self)};
     }
 
@@ -50,18 +73,20 @@ class continuation {
     bool sync_ = true;
     bool awaited_ = true;
   };
+  template <typename... Rs>
+  struct handle_return;
   template <typename Ret>
-  struct handle_return {
+  struct handle_return<Ret> {
     void return_value(Ret result) { result_ = std::move(result); }
     auto return_result(this auto& self, auto& coroutine) {
       auto result = std::move(self.result_);
       if (!self.awaited_) coroutine.destroy();
       return result;
     }
-    R result_ = {};
+    Ret result_ = {};
   };
   template <>
-  struct handle_return<void> {
+  struct handle_return<> {
     void return_void() {};
     auto return_result(this auto& self, auto& coroutine) {
       if (!self.awaited_) coroutine.destroy();
@@ -69,7 +94,7 @@ class continuation {
   };
 
  public:
-  using promise_type = basic_promise_type<handle_return<R>>;
+  using promise_type = basic_promise_type<handle_return<Args...>>;
 
  private:
   std::coroutine_handle<promise_type> coroutine_;
@@ -109,7 +134,7 @@ class continuation {
     return handle_resume([](auto e) { std::rethrow_exception(e); });
   }
   auto handle_resume(auto handle_exception) {
-    if (!coroutine_) return R{};
+    if (!coroutine_) return result_t<Args...>::default_value();
     if (auto exception = coroutine_.promise().exception_)
       handle_exception(exception);
     return coroutine_.promise().return_result(coroutine_);
@@ -138,19 +163,6 @@ enum class synchronisation { sync, async };
 template <synchronisation sync_or_async, typename Api, typename... CallbackArgs>
   requires(is_noexept_callback_api<Api, CallbackArgs...>)
 struct continuation_awaiter {
-  template <typename... Args>
-  struct result_t_impl {
-    using type = std::tuple<Args...>;
-    static auto make(CallbackArgs... args) {
-      return std::make_tuple(std::forward<CallbackArgs>(args)...);
-    }
-  };
-  template <typename Arg>
-  struct result_t_impl<Arg> {
-    using type = Arg;
-    static auto make(Arg arg) { return std::forward<Arg>(arg); }
-  };
-  using result_t = typename result_t_impl<CallbackArgs...>;
   bool await_ready() { return false; }
   void await_suspend(auto calling_coroutine) {
     calling_coroutine.promise().sync_ = sync_or_async == synchronisation::sync;
@@ -158,13 +170,14 @@ struct continuation_awaiter {
     api_([this, calling_coroutine, called](CallbackArgs&&... args) mutable {
       if (called) return;
       called = true;
-      result_ = result_t::make(std::forward<CallbackArgs>(args)...);
+      result_ =
+          result_t<CallbackArgs...>::make(std::forward<CallbackArgs>(args)...);
       calling_coroutine.resume();
     });
   }
   auto await_resume() { return result_; }
   const Api api_;
-  result_t::type result_ = {};
+  result_t<CallbackArgs...>::type result_ = {};
 };
 
 template <synchronisation sync_or_async, typename... CallbackArgs>
@@ -188,7 +201,7 @@ auto callback_async(auto&& api) {
       std::forward<api_t>(api));
 }
 
-template <typename R>
-void dont_await([[maybe_unused]] continuation<R>&& c) {}
+template <typename... R>
+void dont_await([[maybe_unused]] continuation<R...>&& c) {}
 
 }  // namespace co_go

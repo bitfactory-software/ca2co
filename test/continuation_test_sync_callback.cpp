@@ -41,14 +41,14 @@ TEST_CASE("int [continuation]") {
   });
   // - app callback style
 
-  [&] -> co_go::continuation<void> {
+  [&] -> co_go::continuation<> {
     // call coro style must exist inside a coro
     auto _42 = co_await int_recieve_coro();
     std::println("recieving 42");
     CHECK(42 == _42);
   }();
 
-  [&] -> co_go::continuation<void> {
+  [&] -> co_go::continuation<> {
     // call coro style must exist inside a coro
     auto _43 = co_await int_recieve_coro_indirect();
     std::println("recieving 43");
@@ -79,7 +79,7 @@ co_go::continuation<int> async_api_coro_indirect() {
 TEST_CASE("int async [continuation]") {
   auto id_start = std::this_thread::get_id();
   auto called = false;
-  [&] -> co_go::continuation<void> {
+  [&] -> co_go::continuation<> {
     // call coro style must exist inside a coro
     auto _42 = co_await async_api_coro();  // blocks!
     std::println("recieving 42");
@@ -93,7 +93,7 @@ TEST_CASE("int async [continuation]") {
 TEST_CASE("int async indirect [continuation]") {
   auto id_start = std::this_thread::get_id();
   auto called = false;
-  [&] -> co_go::continuation<void> {
+  [&] -> co_go::continuation<> {
     // call coro style must exist inside a coro
     auto _43 = co_await async_api_coro_indirect();
     std::println("recieving 43");
