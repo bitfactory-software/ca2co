@@ -53,14 +53,63 @@ struct callback_awaiter {
   result_t<CallbackArgs...>::type result_ = {};
 };
 
-template <typename... Args>
-class continuation {
+template <typename Promise, typename... Args>
+class continuation_awaiter {
+ private:
+  std::coroutine_handle<Promise> coroutine_;
+
+ public:
+  continuation_awaiter& operator=(const continuation_awaiter&) = delete;
+  continuation_awaiter& operator=(continuation_awaiter&& r) = delete;
+  continuation_awaiter(const continuation_awaiter&) = delete;
+  continuation_awaiter(continuation_awaiter&& r) noexcept {
+    std::swap(coroutine_, r.coroutine_);
+  }
+  explicit continuation_awaiter(std::coroutine_handle<Promise> coroutine)
+      : coroutine_(coroutine) {}
+  ~continuation_awaiter() noexcept {
+    if (!coroutine_) return;
+    if (coroutine_.promise().sync_ == synchronisation::sync)
+      coroutine_.destroy();
+    else
+      coroutine_.promise().awaited_ = false;
+  }
+
   static void build_async_chain(auto suspended_coroutine,
                                 auto calling_coroutine) {
     suspended_coroutine.promise().calling_coroutine_ = calling_coroutine;
     calling_coroutine.promise().sync_ = synchronisation::async;
   }
 
+  bool await_ready() const noexcept { return false; }
+  void await_suspend(auto calling_coroutine) noexcept {
+    if (!coroutine_ || coroutine_.promise().sync_ == synchronisation::sync)
+      calling_coroutine.resume();
+    else
+      build_async_chain(this->coroutine_, calling_coroutine);
+  }
+  auto await_resume() { return handle_resume(); }
+  auto get_sync_result(auto handle_exception) {
+    return handle_resume(handle_exception);
+  }
+  auto get_sync_result() { return handle_resume(); }
+  auto handle_resume() {
+    return handle_resume([](auto e) { std::rethrow_exception(e); });
+  }
+  auto handle_resume(auto handle_exception) {
+    if (!coroutine_) return result_t<Args...>::default_value();
+    if (auto exception = coroutine_.promise().exception_)
+      handle_exception(exception);
+    return coroutine_.promise().return_result(coroutine_);
+  }
+  auto coroutine() const { return coroutine_; }
+  bool is_sync() const {
+    return coroutine_.promise().sync_ == synchronisation::sync;
+  }
+};
+
+template <typename... Args>
+class continuation {
   template <typename HandleReturn>
   struct basic_promise_type : HandleReturn {
 #ifdef CO_GO_CONTINUATION_TEST
@@ -132,51 +181,31 @@ class continuation {
   using promise_type = basic_promise_type<handle_return<Args...>>;
 
  private:
-  std::coroutine_handle<promise_type> coroutine_;
+  continuation_awaiter<promise_type, Args...> awaiter_;
 
  public:
   continuation& operator=(const continuation&) = delete;
   continuation& operator=(continuation&& r) = delete;
   continuation(const continuation&) = delete;
-  continuation(continuation&& r) noexcept {
-    std::swap(coroutine_, r.coroutine_);
-  }
+  continuation(continuation&& r) noexcept : awaiter_(std::move(r.awaiter_)) {};
 
   continuation() noexcept = default;
   explicit continuation(std::coroutine_handle<promise_type> coroutine)
-      : coroutine_(coroutine) {}
-  ~continuation() noexcept {
-    if (!coroutine_) return;
-    if (coroutine_.promise().sync_ == synchronisation::sync)
-      coroutine_.destroy();
-    else
-      coroutine_.promise().awaited_ = false;
-  }
+      : awaiter_(coroutine) {}
 
-  bool await_ready() const noexcept { return false; }
+  bool await_ready() const noexcept { return awaiter_.await_ready(); }
   void await_suspend(auto calling_coroutine) noexcept {
-    if (!coroutine_ || coroutine_.promise().sync_ == synchronisation::sync)
-      calling_coroutine.resume();
-    else
-      build_async_chain(this->coroutine_, calling_coroutine);
+    awaiter_.await_suspend(calling_coroutine);
   }
-  auto await_resume() { return handle_resume(); }
-  auto get_sync_result(auto handle_exception) {
-    return handle_resume(handle_exception);
-  }
-  auto get_sync_result() { return handle_resume(); }
-  auto handle_resume() {
-    return handle_resume([](auto e) { std::rethrow_exception(e); });
-  }
-  auto handle_resume(auto handle_exception) {
-    if (!coroutine_) return result_t<Args...>::default_value();
-    if (auto exception = coroutine_.promise().exception_)
-      handle_exception(exception);
-    return coroutine_.promise().return_result(coroutine_);
-  }
+  auto await_resume() { return awaiter_.await_resume(); }
 
-  auto coroutine() const { return coroutine_; }
-  bool is_sync() const { return coroutine_.promise().sync_ == synchronisation::sync; }
+  auto get_sync_result(auto handle_exception) {
+    return awaiter_.get_sync_result(handle_exception);
+  }
+  auto get_sync_result() { return awaiter_.get_sync_result(); }
+
+  auto coroutine() const { return awaiter_.coroutine(); }
+  bool is_sync() const { return awaiter_.is_sync(); }
 };
 
 template <typename Api, typename... CallbackArgs>
@@ -197,7 +226,7 @@ template <synchronisation sync_or_async, typename... CallbackArgs>
 continuation<CallbackArgs...> callback(auto&& api) {
   using api_t = decltype(api);
   co_return co_await callback_awaiter<sync_or_async, std::decay_t<api_t>,
-                                          CallbackArgs...>{
+                                      CallbackArgs...>{
       std::forward<api_t>(api)};
 }
 
