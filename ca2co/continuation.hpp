@@ -161,8 +161,8 @@ struct basic_promise_type : HandleReturn {
     void await_resume() noexcept {}
   };
 
-  auto initial_suspend() noexcept { return std::suspend_never{}; }
-  auto final_suspend() noexcept { return await_continuation{}; }
+  static auto initial_suspend() noexcept { return std::suspend_never{}; }
+  static auto final_suspend() noexcept { return await_continuation{}; }
 
   void unhandled_exception() noexcept { exception_ = std::current_exception(); }
 
@@ -170,7 +170,7 @@ struct basic_promise_type : HandleReturn {
   std::exception_ptr exception_ = {};
   synchronisation sync_ = synchronisation::sync;
   bool awaited_ = true;
-  void destroy_if_not_awaited(auto& coroutine) {
+  void destroy_if_not_awaited(auto& coroutine) const {
     if (!awaited_) coroutine.destroy();
   }
 };

@@ -1,11 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
-#include <chrono>
+#include <chrono>  // NOLINT(misc-include-cleaner)
 #include <functional>
 #include <print>
 #include <stdexcept>
+#include <string>
 #include <thread>
- #include <utility>
- #include <string>
+#include <utility>
 #define CO_GO_CONTINUATION_TEST
 #include <ca2co/continuation.hpp>
 
@@ -37,7 +37,7 @@ bool
 constexpr auto n_41 = 41;
 constexpr auto n_42 = 42;
 constexpr auto d_42 = 42.0;
-constexpr auto short_break = 10ms;
+constexpr auto short_break = 10ms;  // NOLINT(misc-include-cleaner)
 
 void api_async(const std::function<void(int)>& callback) noexcept {
   a_thread = std::thread([=] {
@@ -241,25 +241,28 @@ api_async_callback_throws_in_background_thread_wrapped() {
 }  // namespace fixture
 }  // namespace
 
-TEST_CASE( // NOLINT
+TEST_CASE(  // NOLINT
     "api_async_callback_throws_in_background_thread [continuation]") {  // NOLINT
-  CHECK(ca2co::continuation_promise_count == 0); // NOLINT
+  CHECK(ca2co::continuation_promise_count == 0);  // NOLINT
   {
     bool resumed = false;
-    ca2co::spawn([&] -> ca2co::continuation<> {  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
-      auto id_start = std::this_thread::get_id();
-      auto error = co_await fixture::
-          api_async_callback_throws_in_background_thread_wrapped();
-      CHECK(error == -1);
-      auto id_continuation = std::this_thread::get_id();
-      CHECK(id_start != id_continuation);
-      CHECK(fixture::a_threads_id == id_continuation);
-      resumed = true;
-    }());
+    ca2co::spawn(
+        [&]
+        -> ca2co::
+            continuation<> {  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
+              auto id_start = std::this_thread::get_id();
+              auto error = co_await fixture::
+                  api_async_callback_throws_in_background_thread_wrapped();
+              CHECK(error == -1);
+              auto id_continuation = std::this_thread::get_id();
+              CHECK(id_start != id_continuation);
+              CHECK(fixture::a_threads_id == id_continuation);
+              resumed = true;
+            }());
     fixture::a_thread.join();
     CHECK(resumed);
   }
-  CHECK(ca2co::continuation_promise_count == 0);// NOLINT
+  CHECK(ca2co::continuation_promise_count == 0);  // NOLINT
 }
 
 TEST_CASE("Asynchron") {
@@ -276,12 +279,14 @@ TEST_CASE("Asynchron") {
 }
 
 TEST_CASE("MoveConstructContinuation") {
-  auto original([]() -> ca2co::continuation<> { co_return; }()); 
+  auto original([]() -> ca2co::continuation<> { co_return; }());
   CHECK(original.coroutine());
   const ca2co::continuation<> movedTo(std::move(original));
-#pragma warning(push)
-#pragma warning(disable : 26800)
-  CHECK(!original.coroutine());  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved)
-#pragma warning(pop)
+#pragma warning(push)             // NOLINT(clang-diagnostic-unknown-pragmas)
+#pragma warning(disable : 26800)  // NOLINT(clang-diagnostic-unknown-pragmas)
+  CHECK(
+      !original
+           .coroutine());  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved)
+#pragma warning(pop)  // NOLINT(clang-diagnostic-unknown-pragmas)
   CHECK(movedTo.coroutine());
 }

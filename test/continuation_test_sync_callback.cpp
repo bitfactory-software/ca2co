@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <chrono>
+#include <chrono>  // NOLINT(misc-include-cleaner)
 #include <functional>
 #include <future>
 #include <print>
@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 namespace {
 int step = 1;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
-constexpr auto short_break = 10ms;
+constexpr auto short_break = 10ms;  // NOLINT(misc-include-cleaner)
 constexpr auto answer_number = 42;
 
 // + lib callback style
