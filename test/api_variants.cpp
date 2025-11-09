@@ -65,7 +65,7 @@ static_assert(ca2co::is_noexept_callback_api_v<
 }  // namespace
 
 TEST_CASE("sync_api_string_view_int") {
-  auto called = false;
+  static auto called = false;
   [&] -> ca2co::continuation<> { // NOLINT
     auto [a_s, an_i] = co_await fixture::co_sync_api_string_view_int();
     CHECK(a_s == "xy");
@@ -76,7 +76,7 @@ TEST_CASE("sync_api_string_view_int") {
 }
 
 TEST_CASE("async_api_string_view_int direct") {
-  auto called = false;
+  static auto called = false;
   [&] -> ca2co::continuation<> { // NOLINT
     auto [a_s, an_i] = co_await ca2co::callback_async<std::string_view, int>(
         fixture::async_api_string_view_int);
@@ -89,7 +89,7 @@ TEST_CASE("async_api_string_view_int direct") {
 }
 
 TEST_CASE("async_api_string_view_int indirect") {
-  auto called = false;
+  static auto called = false;
   [&] -> ca2co::continuation<> { // NOLINT
     auto [a_s, an_i] = co_await fixture::co_async_api_string_view_int();
     CHECK(a_s == "hello world");
@@ -101,7 +101,7 @@ TEST_CASE("async_api_string_view_int indirect") {
 }
 
 TEST_CASE("async_api_int_loop") {
-  auto called = false;
+  static auto called = false;
   [&] -> ca2co::continuation<> { // NOLINT
     auto y = 0;
     for (auto an_i : *co_await fixture::co_async_api_int_loop()) {
