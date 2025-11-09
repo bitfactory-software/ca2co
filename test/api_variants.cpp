@@ -6,7 +6,7 @@
 #include <thread>
 #include <tuple>
 
-#define CO_GO_CONTINUATION_TEST
+#define CA2CO_TEST
 #include <ca2co/continuation.hpp>
 
 using namespace std::chrono_literals;

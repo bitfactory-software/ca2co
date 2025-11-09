@@ -5,7 +5,7 @@
 
 namespace ca2co {
 
-#ifdef CO_GO_CONTINUATION_TEST
+#ifdef CA2CO_TEST
 static int continuation_promise_count = 0;
 #endif
 
@@ -141,7 +141,7 @@ class continuation;
 
 template <typename HandleReturn, typename... Args>
 struct basic_promise_type : HandleReturn {
-#ifdef CO_GO_CONTINUATION_TEST
+#ifdef CA2CO_TEST
   basic_promise_type() noexcept { ++continuation_promise_count; }
   ~basic_promise_type() noexcept { --continuation_promise_count; }
 #endif
