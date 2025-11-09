@@ -13,18 +13,20 @@ using namespace std::chrono_literals;
 
 namespace {
 namespace fixture {
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
-#endif
-auto func1(std::function<void(int)> const& callback) noexcept(false) -> void;
-auto func2(std::function<void(int)> const& callback) noexcept -> void;
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-
-static_assert(!ca2co::is_noexept_callback_api<decltype(func1), int>);
-static_assert(ca2co::is_noexept_callback_api<decltype(func2), int>);
+//#if defined __clang__ || defined _MSC_VER
+//
+//#if defined __clang__
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
+//#endif
+using func1 = auto (std::function<void(int)> const& callback) noexcept(false) -> void;
+using func2 = auto (std::function<void(int)> const& callback) noexcept -> void;
+//#ifdef __GNUC__
+//#pragma GCC diagnostic pop
+//#endif
+static_assert(!ca2co::is_noexept_callback_api<func1, int>);
+static_assert(ca2co::is_noexept_callback_api<func2, int>);
+//#endif
 
 std::thread
     a_thread;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
@@ -234,18 +236,18 @@ TEST_CASE(  // NOLINT
   {
     bool resumed = false;
     ca2co::spawn(
-        [&] // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
-        -> ca2co:: // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
-            continuation<> {  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
-              auto id_start = std::this_thread::get_id();
-              auto error = co_await fixture::
-                  api_async_callback_throws_in_background_thread_wrapped();
-              CHECK(error == -1);
-              auto id_continuation = std::this_thread::get_id();
-              CHECK(id_start != id_continuation);
-              CHECK(fixture::a_threads_id == id_continuation);
-              resumed = true;
-            }());
+        [&]  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
+        -> ca2co::  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
+        continuation<> {  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
+          auto id_start = std::this_thread::get_id();
+          auto error = co_await fixture::
+              api_async_callback_throws_in_background_thread_wrapped();
+          CHECK(error == -1);
+          auto id_continuation = std::this_thread::get_id();
+          CHECK(id_start != id_continuation);
+          CHECK(fixture::a_threads_id == id_continuation);
+          resumed = true;
+        }());
     fixture::a_thread.join();
     CHECK(resumed);
   }
