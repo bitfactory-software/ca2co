@@ -62,7 +62,7 @@ TEST_CASE("int [continuation]") {
 
 namespace {
 void async_api(std::function<void(int)> const& continuation) noexcept {
-  [[maybe_unused]] auto unused = std::async(std::launch::async, [=] {
+  [[maybe_unused]] auto unused = std::async(std::launch::async, [=] { // NOLINT(bugprone-unused-local-non-trivial-variable)
     std::this_thread::sleep_for(short_break);
     std::println("sleep on thread {}", std::this_thread::get_id());
     continuation(answer_number);

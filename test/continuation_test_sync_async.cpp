@@ -13,13 +13,13 @@ using namespace std::chrono_literals;
 
 namespace {
 namespace fixture {
-#ifdef __clang__
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
 #endif
 auto func1(std::function<void(int)> const& callback) noexcept(false) -> void;
 auto func2(std::function<void(int)> const& callback) noexcept -> void;
-#ifdef __clang__
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
 
@@ -56,19 +56,6 @@ void api_async_callback_no_called(
     // this will leak the waiting coroutines...
   });
 }
-
-#ifdef __clang__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-#endif
-void api_async_callback_throws_unhandled_in_calling_thread(
-    [[maybe_unused]] const std::function<void(int)>& callback) noexcept {
-  // vvv not allowed, does not compile!
-  // throw std::runtime_error("test_Exception in calling thread");
-}
-#ifdef __clang__
-#pragma GCC diagnostic pop
-#endif
 
 void api_async_callback_throws_in_background_thread(
     [[maybe_unused]] const std::function<void(int)>& callback) noexcept {
