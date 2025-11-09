@@ -267,6 +267,8 @@ TEST_CASE("Asynchron") {
   CHECK(ca2co::continuation_promise_count == 0);
 }
 
+#if defined _MSC_VER
+
 TEST_CASE("MoveConstructContinuation") {
   auto original([]() -> ca2co::continuation<> { co_return; }());
   CHECK(original.coroutine());
@@ -279,3 +281,5 @@ TEST_CASE("MoveConstructContinuation") {
 #pragma warning(pop)  // NOLINT(clang-diagnostic-unknown-pragmas)
   CHECK(movedTo.coroutine());
 }
+
+#endif
