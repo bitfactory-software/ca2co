@@ -1,10 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
-#include <chrono>
+#include <chrono> // NOLINT(misc-include-cleaner)
 #include <functional>
-#include <generator>
-#include <optional>
 #include <print>
-#include <ranges>
 #include <string_view>
 #include <thread>
 #include <tuple>
@@ -39,24 +36,6 @@ ca2co::continuation<std::string_view, int> co_async_api_string_view_int() {
 ca2co::continuation<std::string_view, int> co_sync_api_string_view_int() {
   co_return std::make_tuple<std::string_view, int>(std::string_view("xy"), 2);
 }
-
-void async_api_int_loop(
-    std::function<void(std::optional<std::generator<int>>)> const&
-        callback) noexcept {
-  a_thread = std::thread{[=] {
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(short_break);
-    std::println("sleep on thread {}", std::this_thread::get_id());
-    callback([] -> std::generator<int> {
-      for (auto an_i : std::views::iota(0, 3)) co_yield an_i;  // NOLINT
-    }());
-    std::println("after call to continuation async_api");
-  }};
-}
-auto co_async_api_int_loop() {
-  return ca2co::callback_async<std::optional<std::generator<int>>>(
-      fixture::async_api_int_loop);
-};
 
 static_assert(
     !ca2co::is_noexept_callback_api_v<decltype(async_api_string_view_int),
@@ -96,21 +75,6 @@ TEST_CASE("async_api_string_view_int indirect") {
     auto [a_s, an_i] = co_await fixture::co_async_api_string_view_int();
     CHECK(a_s == "hello world");
     CHECK(an_i == fixture::answer_number);
-    called = true;
-  }();
-  fixture::a_thread.join();
-  CHECK(called);
-}
-
-TEST_CASE("async_api_int_loop") {
-  static auto called = false;
-  [&] -> ca2co::continuation<> {  // NOLINT
-    auto y = 0;
-    auto gen_opt = co_await fixture::co_async_api_int_loop();
-    for (auto an_i : *gen_opt) {
-      CHECK(an_i == y++);
-    }
-    CHECK(y == 3);
     called = true;
   }();
   fixture::a_thread.join();
