@@ -193,7 +193,6 @@ struct handle_return {
   void return_value(this auto& self, std::tuple<Rs...> result) {
     self.result_ = std::move(result);
   }
-  [[clang::suppress("functionStatic")]]
   auto return_result(this auto& self, auto& coroutine) {
     auto result = std::move(self.result_);
     self.destroy_if_not_awaited(coroutine);
@@ -204,7 +203,6 @@ struct handle_return {
 template <typename Ret>
 struct handle_return<Ret> {
   void return_value(Ret result) { result_ = std::move(result); }
-  [[clang::suppress("functionStatic")]]
   auto return_result(this auto& self, auto& coroutine) {
     auto result = std::move(self.result_);
     self.destroy_if_not_awaited(coroutine);
@@ -215,7 +213,6 @@ struct handle_return<Ret> {
 template <>
 struct handle_return<> {
   static void return_void() {};
-  [[clang::suppress("functionStatic")]]
   auto return_result(this auto& self, auto& coroutine) {
     self.destroy_if_not_awaited(coroutine);
   }
@@ -272,7 +269,6 @@ class continuation {
 };
 
 template <typename HandleReturn, typename... Args>
-[[clang::suppress("functionStatic")]]
 continuation<Args...>
 basic_promise_type<HandleReturn, Args...>::get_return_object(this auto& self) {
   return continuation<Args...>{
