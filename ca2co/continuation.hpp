@@ -260,8 +260,8 @@ class continuation {
 };
 
 template <typename HandleReturn, typename... Args>
-continuation<Args...> 
  [[clang::suppress("functionStatic")]]
+continuation<Args...> 
  basic_promise_type<HandleReturn, Args...>::get_return_object(this auto& self) {
   return continuation<Args...>{
       std::coroutine_handle<basic_promise_type>::from_promise(self)};
