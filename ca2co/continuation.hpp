@@ -1,7 +1,5 @@
-#include <coroutine>
-#include <exception>
-#include <functional>
-#include <variant>
+// clang-tidy: -functionStatic,-misc-function-static
+// NOLINTBEGIN(functionStatic,misc-function-static)
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -13,8 +11,10 @@
 #pragma GCC diagnostic ignored "-Wunused-function"
 #endif
 
-/* clang-tidy: -functionStatic -misc-function-static */
-/* NOLINTBEGIN(functionStatic,misc-function-static) */
+#include <coroutine>
+#include <exception>
+#include <functional>
+#include <variant>
 
 namespace ca2co {
 
@@ -82,10 +82,7 @@ class callback_awaiter {
       calling_coroutine.resume();
     });
   }
-  [[clang::suppress("functionStatic")]]
-  auto await_resume() /* NOLINT(functionStatic) */ {
-    return std::move(result_);
-  }
+  auto await_resume() { return std::move(result_); }
 
  private:
   synchronisation sync_or_async_;
@@ -162,8 +159,7 @@ struct basic_promise_type : HandleReturn {
   ~basic_promise_type() noexcept { --continuation_promise_count; }
 #endif
 
-  continuation<Args...> get_return_object(
-      this auto& self);  // NOLINT(functionStatic)
+  continuation<Args...> get_return_object(this auto& self);
 
   struct await_continuation {
     await_continuation() noexcept {}
@@ -194,14 +190,11 @@ struct basic_promise_type : HandleReturn {
 
 template <typename... Rs>
 struct handle_return {
-  [[clang::suppress("functionStatic")]]
-  void return_value(this auto& self,
-                    std::tuple<Rs...> result) /* NOLINT(functionStatic) */ {
+  void return_value(this auto& self, std::tuple<Rs...> result) {
     self.result_ = std::move(result);
   }
   [[clang::suppress("functionStatic")]]
-  auto return_result(this auto& self,
-                     auto& coroutine) /* NOLINT(functionStatic) */ {
+  auto return_result(this auto& self, auto& coroutine) {
     auto result = std::move(self.result_);
     self.destroy_if_not_awaited(coroutine);
     return result;
@@ -212,8 +205,7 @@ template <typename Ret>
 struct handle_return<Ret> {
   void return_value(Ret result) { result_ = std::move(result); }
   [[clang::suppress("functionStatic")]]
-  auto return_result(this auto& self,
-                     auto& coroutine) /* NOLINT(functionStatic) */ {
+  auto return_result(this auto& self, auto& coroutine) {
     auto result = std::move(self.result_);
     self.destroy_if_not_awaited(coroutine);
     return result;
@@ -224,8 +216,7 @@ template <>
 struct handle_return<> {
   static void return_void() {};
   [[clang::suppress("functionStatic")]]
-  auto return_result(this auto& self,
-                     auto& coroutine) /* NOLINT(functionStatic) */ {
+  auto return_result(this auto& self, auto& coroutine) {
     self.destroy_if_not_awaited(coroutine);
   }
 };
@@ -283,8 +274,7 @@ class continuation {
 template <typename HandleReturn, typename... Args>
 [[clang::suppress("functionStatic")]]
 continuation<Args...>
-basic_promise_type<HandleReturn, Args...>::get_return_object(
-    this auto& self) /* NOLINT(functionStatic) */ {
+basic_promise_type<HandleReturn, Args...>::get_return_object(this auto& self) {
   return continuation<Args...>{
       std::coroutine_handle<basic_promise_type>::from_promise(self)};
 }
@@ -319,4 +309,4 @@ void spawn([[maybe_unused]] continuation<R...>&& c) {}
 #pragma GCC diagnostic pop
 #endif
 
-/* NOLINTEND(functionStatic,misc-function-static) */
+// NOLINTEND(functionStatic,misc-function-static)
