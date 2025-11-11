@@ -1,5 +1,3 @@
-#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
-
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>  // NOLINT(misc-include-cleaner)
 #include <functional>
@@ -111,4 +109,3 @@ TEST_CASE("int async indirect [continuation]") {
   CHECK(called);
 }
 
-#endif

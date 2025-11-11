@@ -1,8 +1,6 @@
 // clang-tidy: -functionStatic,-misc-function-static
 // NOLINTBEGIN(functionStatic,misc-function-static)
 
-#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
-
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
@@ -305,8 +303,6 @@ void spawn([[maybe_unused]] continuation<R...>&& c) {}
 #pragma clang diagnostic pop
 #elif defined(__GNUC__)
 #pragma GCC diagnostic pop
-#endif
-
 #endif
 
 // NOLINTEND(functionStatic,misc-function-static)

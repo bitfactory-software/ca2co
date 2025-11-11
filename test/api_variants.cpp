@@ -1,9 +1,9 @@
-#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
-
 #include <catch2/catch_test_macros.hpp>
-#include <chrono> // NOLINT(misc-include-cleaner)
+#include <chrono>  // NOLINT(misc-include-cleaner)
 #include <functional>
+#include <optional>
 #include <print>
+#include <ranges>
 #include <string_view>
 #include <thread>
 #include <tuple>
@@ -37,6 +37,16 @@ ca2co::continuation<std::string_view, int> co_async_api_string_view_int() {
 };
 ca2co::continuation<std::string_view, int> co_sync_api_string_view_int() {
   co_return std::make_tuple<std::string_view, int>(std::string_view("xy"), 2);
+}
+
+void loop_callback_api(
+    std::function<void(std::optional<int>)> const& callback) noexcept{
+  for (auto i : std::ranges::iota_view(0, 3)) callback(i);
+  callback({});
+}
+
+ca2co::continuation<std::optional<int>> co_loop_api() {
+  return ca2co::callback_sync<std::optional<int>>(loop_callback_api);
 }
 
 }  // namespace fixture
@@ -78,4 +88,12 @@ TEST_CASE("async_api_string_view_int indirect") {
   CHECK(called);
 }
 
-#endif
+//TEST_CASE("co_loop_api sync") {
+//  static auto sum = 0;
+//  [&] -> ca2co::continuation<> {  // NOLINT
+//    for (auto i = co_await fixture::co_loop_api(); i; i = co_await (i.next())){
+//        sum += i.value();
+//    }
+//  }();
+//  CHECK( sum == 1 + 2 + 3);
+//}
