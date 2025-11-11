@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
-#include <utility> // NOLINT(misc-include-cleaner)
+#include <utility>  // NOLINT(misc-include-cleaner)
 #define CA2CO_TEST
 #include <ca2co/continuation.hpp>
 
@@ -13,20 +13,26 @@ using namespace std::chrono_literals;
 
 namespace {
 namespace fixture {
-//#if defined __clang__ || defined _MSC_VER
+#if defined __clang__
+#define TEST_CODE_UNREACHABLE [[clang::suppress("unreachableCode")]]
+#else
+#define TEST_CODE_UNREACHABLE
+#endif
+
 //
-//#if defined __clang__
-//#pragma GCC diagnostic push
-//#pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
-//#endif
-using func1 = auto (std::function<void(int)> const& callback) noexcept(false) -> void;
-using func2 = auto (std::function<void(int)> const& callback) noexcept -> void;
-//#ifdef __GNUC__
-//#pragma GCC diagnostic pop
-//#endif
+// #if defined __clang__
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
+// #endif
+using func1 = auto(std::function<void(int)> const& callback) noexcept(false)
+    -> void;
+using func2 = auto(std::function<void(int)> const& callback) noexcept -> void;
+// #ifdef __GNUC__
+// #pragma GCC diagnostic pop
+// #endif
 static_assert(!ca2co::is_noexept_callback_api<func1, int>);
 static_assert(ca2co::is_noexept_callback_api<func2, int>);
-//#endif
+// #endif
 
 std::thread
     a_thread;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
@@ -95,8 +101,7 @@ ca2co::continuation<int> test_1_sync() {
 ca2co::continuation<int> test_1_sync_with_exception() {
   std::println("Start test_1_sync_with_exception");
   throw std::runtime_error("test_Exception");
-  [[clang::suppress("unreachableCode")]]
-  co_return n_42;
+  TEST_CODE_UNREACHABLE co_return n_42;
 }
 
 ca2co::continuation<int> test_1_async_with_exception() {
@@ -104,8 +109,7 @@ ca2co::continuation<int> test_1_async_with_exception() {
   const int x = co_await ca2co::callback_async<int>(&api_async);
   CHECK(x == n_41);
   throw std::runtime_error("test_Exception");
-  [[clang::suppress("unreachableCode")]]
-  co_return n_42;
+  TEST_CODE_UNREACHABLE co_return n_42;
 }
 
 ca2co::continuation<double> test_2(auto&& test1) {  // NOLINT
