@@ -1,6 +1,8 @@
 // clang-tidy: -functionStatic,-misc-function-static
 // NOLINTBEGIN(functionStatic,misc-function-static)
 
+#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
+
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
@@ -188,7 +190,6 @@ struct basic_promise_type : HandleReturn {
   }
 };
 
-#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
 template <typename... Rs>
 struct handle_return {
   void return_value(this auto& self, std::tuple<Rs...> result) {
@@ -218,8 +219,6 @@ struct handle_return<> {
     self.destroy_if_not_awaited(coroutine);
   }
 };
-#endif
-
 
 template <typename... Args>
 class continuation {
@@ -271,14 +270,12 @@ class continuation {
   std::variant<continuation_awaiter_t, callback_awaiter_t> awaiter_;
 };
 
-#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
 template <typename HandleReturn, typename... Args>
 continuation<Args...>
 basic_promise_type<HandleReturn, Args...>::get_return_object(this auto& self) {
   return continuation<Args...>{
       std::coroutine_handle<basic_promise_type>::from_promise(self)};
 }
-#endif
 
 template <typename... CallbackArgs>
 auto callback(synchronisation sync_or_async, auto&& api) {
@@ -308,6 +305,8 @@ void spawn([[maybe_unused]] continuation<R...>&& c) {}
 #pragma clang diagnostic pop
 #elif defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
+
 #endif
 
 // NOLINTEND(functionStatic,misc-function-static)

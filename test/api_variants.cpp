@@ -1,3 +1,5 @@
+#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
+
 #include <catch2/catch_test_macros.hpp>
 #include <chrono> // NOLINT(misc-include-cleaner)
 #include <functional>
@@ -80,3 +82,5 @@ TEST_CASE("async_api_string_view_int indirect") {
   fixture::a_thread.join();
   CHECK(called);
 }
+
+#endif

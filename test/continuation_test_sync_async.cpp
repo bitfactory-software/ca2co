@@ -1,3 +1,5 @@
+#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
+
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>  // NOLINT(misc-include-cleaner)
 #include <functional>
@@ -287,5 +289,7 @@ TEST_CASE("MoveConstructContinuation") {
 #pragma warning(pop)  // NOLINT(clang-diagnostic-unknown-pragmas)
   CHECK(movedTo.coroutine());
 }
+
+#endif
 
 #endif

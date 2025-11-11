@@ -1,3 +1,5 @@
+#ifndef __clang_analyzer__  // to avoid analyzer confusion with deduced thhis
+
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>  // NOLINT(misc-include-cleaner)
 #include <functional>
@@ -62,12 +64,14 @@ TEST_CASE("int [continuation]") {
 
 namespace {
 void async_api(std::function<void(int)> const& continuation) noexcept {
-  [[maybe_unused]] auto unused = std::async(std::launch::async, [=] { // NOLINT(bugprone-unused-local-non-trivial-variable)
-    std::this_thread::sleep_for(short_break);
-    std::println("sleep on thread {}", std::this_thread::get_id());
-    continuation(answer_number);
-    std::println("after call to continuation async_api");
-  });
+  [[maybe_unused]] auto unused = std::async(
+      std::launch::async,
+      [=] {  // NOLINT(bugprone-unused-local-non-trivial-variable)
+        std::this_thread::sleep_for(short_break);
+        std::println("sleep on thread {}", std::this_thread::get_id());
+        continuation(answer_number);
+        std::println("after call to continuation async_api");
+      });
 }
 ca2co::continuation<int> async_api_coro() {
   co_return co_await ca2co::callback_sync<int>(async_api);
@@ -106,3 +110,5 @@ TEST_CASE("int async indirect [continuation]") {
   }();
   CHECK(called);
 }
+
+#endif
