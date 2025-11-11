@@ -60,7 +60,7 @@ jobs:
             gcov_executable: gcov-14
             enable_ipo: On
 
-          - compiler: llvm-19.1.1
+          - compiler: llvm-20.1.6
             enable_ipo: Off
             gcov_executable: "llvm-cov gcov"
 
