@@ -30,7 +30,7 @@ struct overloads : Ts... {
 };
 
 template <typename V>
-class iterator {
+class iterator : public std::suspend_always {
  public:
   using value_t = typename V;
   using optional_t = std::optional<value_t>;
@@ -40,13 +40,7 @@ class iterator {
   iterator(optional_t optional) : holder_(std::move(optional)) {}
   iterator() : iterator(optional_t{}) {}
 
-  struct next_awaiter : std::suspend_always {
-    next_awaiter(get_value_t get_value) : get_value_(std::move(get_value)) {}
-    get_value_t get_value_;
-    iterator await_resume() const {
-      return iterator{get_value_};
-    }
-  };
+  iterator await_resume() const { return *this; }
 
   auto operator*() const {
     return std::visit(
@@ -63,7 +57,10 @@ class iterator {
         holder_);
   }
 
-  auto next() const { return next_awaiter{std::get<get_value_t>(holder_)}; }
+  auto operator++() {
+    return *this;
+  }  // only to mimic the proposed for co_await sntax, see
+     // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/n4775.pdf
 
  private:
   std::variant<get_value_t, optional_t> holder_;

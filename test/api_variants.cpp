@@ -94,7 +94,7 @@ TEST_CASE("co_loop_api sync") {
   static_assert(ca2co::is_iterator<ca2co::iterator<int>>);
   using callback_awaiter_t = decltype(fixture::co_loop_api());
   [&] -> ca2co::continuation<> {  // NOLINT
-    for (auto i = co_await fixture::co_loop_api(); i; i = co_await i.next()) {
+    for (auto i = co_await fixture::co_loop_api(); i; co_await ++i) {
       sum += *i;
     }
   }();
