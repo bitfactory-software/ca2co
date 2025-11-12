@@ -71,7 +71,7 @@ ca2co::continuation<ca2co::iterator<int>> co_loop_api_async() {
 
 TEST_CASE("sync_api_string_view_int") {
   static auto called = false;
-  [&] -> ca2co::continuation<> {  // NOLINT
+  [] -> ca2co::continuation<> {
     auto [a_s, an_i] = co_await fixture::co_sync_api_string_view_int();
     CHECK(a_s == "xy");
     CHECK(an_i == 2);
@@ -82,7 +82,7 @@ TEST_CASE("sync_api_string_view_int") {
 
 TEST_CASE("async_api_string_view_int direct") {
   static auto called = false;
-  [&] -> ca2co::continuation<> {  // NOLINT
+  [] -> ca2co::continuation<> {
     auto [a_s, an_i] = co_await ca2co::callback_async<std::string_view, int>(
         fixture::async_api_string_view_int);
     CHECK(a_s == "hello world");
@@ -95,7 +95,7 @@ TEST_CASE("async_api_string_view_int direct") {
 
 TEST_CASE("async_api_string_view_int indirect") {
   static auto called = false;
-  [&] -> ca2co::continuation<> {  // NOLINT
+  [] -> ca2co::continuation<> {
     auto [a_s, an_i] = co_await fixture::co_async_api_string_view_int();
     CHECK(a_s == "hello world");
     CHECK(an_i == fixture::answer_number);
@@ -111,7 +111,7 @@ constexpr int is_six = 6;
 
 TEST_CASE("co_loop_api sync") {
   static auto sum = 0;
-  [&] -> ca2co::continuation<> {  // NOLINT
+  [] -> ca2co::continuation<> {
     for (auto __i = co_await fixture::co_loop_api_sync(); __i; co_await __i)
       if (auto i = *__i; true) sum += i;
   }();
@@ -120,7 +120,7 @@ TEST_CASE("co_loop_api sync") {
 
 TEST_CASE("CA2CO_for_co_await sync") {
   static auto sum = 0;
-  [&] -> ca2co::continuation<> {  // NOLINT
+  [] -> ca2co::continuation<> {
     CA2CO_for_co_await(auto i, fixture::co_loop_api_sync()) sum += i;
   }();
   CHECK(sum == is_six);
@@ -128,7 +128,7 @@ TEST_CASE("CA2CO_for_co_await sync") {
 
 TEST_CASE("CA2CO_for_co_await async") {
   static auto sum = 0;
-  [&] -> ca2co::continuation<> {  // NOLINT
+  [] -> ca2co::continuation<> {  // NOLINT
     CA2CO_for_co_await(auto i, fixture::co_loop_api_async()) sum += i;
   }();
   fixture::a_thread.join();

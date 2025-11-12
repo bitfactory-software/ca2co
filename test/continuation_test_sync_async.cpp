@@ -212,8 +212,8 @@ TEST_CASE("AsynchronWithException") {
 TEST_CASE("api_async_callback_no_called") {
   CHECK(ca2co::continuation_promise_count == 0);
   {
-    bool resumed = false;
-    [[maybe_unused]] auto _ = [&] -> ca2co::continuation<> {  // NOLINT
+    static bool resumed = false;
+    [[maybe_unused]] auto _ = [] -> ca2co::continuation<> {
       co_await ca2co::callback_async<int>(
           fixture::api_async_callback_no_called);
       resumed = true;
@@ -240,20 +240,17 @@ TEST_CASE(  // NOLINT
     "api_async_callback_throws_in_background_thread [continuation]") {  // NOLINT
   CHECK(ca2co::continuation_promise_count == 0);  // NOLINT
   {
-    bool resumed = false;
-    ca2co::spawn(
-        [&]  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
-        -> ca2co::  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
-        continuation<> {  // NOLINT(cppcoreguidelines-avoid-capturing-lambda-coroutines)
-          auto id_start = std::this_thread::get_id();
-          auto error = co_await fixture::
-              api_async_callback_throws_in_background_thread_wrapped();
-          CHECK(error == -1);
-          auto id_continuation = std::this_thread::get_id();
-          CHECK(id_start != id_continuation);
-          CHECK(fixture::a_threads_id == id_continuation);
-          resumed = true;
-        }());
+    static bool resumed = false;
+    ca2co::spawn([] -> ca2co::continuation<> {
+      auto id_start = std::this_thread::get_id();
+      auto error = co_await fixture::
+          api_async_callback_throws_in_background_thread_wrapped();
+      CHECK(error == -1);
+      auto id_continuation = std::this_thread::get_id();
+      CHECK(id_start != id_continuation);
+      CHECK(fixture::a_threads_id == id_continuation);
+      resumed = true;
+    }());
     fixture::a_thread.join();
     CHECK(resumed);
   }
