@@ -57,14 +57,14 @@ class iterator : public std::suspend_always {
         holder_);
   }
 
-  auto operator++() {
-    return *this;
-  }  // only to mimic the proposed for co_await sntax, see
-     // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/n4775.pdf
-
  private:
   std::variant<get_value_t, optional_t> holder_;
 };
+
+#define CA2CO_for_co_await(for_range_declaration, for_range_initializer) \
+  for (auto __i = co_await for_range_initializer; __i; co_await __i)     \
+    if (for_range_declaration = *__i; true)
+
 
 template <typename... Args>
 struct is_iterator_impl : std::false_type {};

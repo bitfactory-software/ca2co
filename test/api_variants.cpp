@@ -94,9 +94,19 @@ TEST_CASE("co_loop_api sync") {
   static_assert(ca2co::is_iterator<ca2co::iterator<int>>);
   using callback_awaiter_t = decltype(fixture::co_loop_api());
   [&] -> ca2co::continuation<> {  // NOLINT
-    for (auto i = co_await fixture::co_loop_api(); i; co_await ++i) {
-      sum += *i;
-    }
+    for (auto __i = co_await fixture::co_loop_api(); __i; co_await __i)
+      if (auto i = *__i; true) sum += i;
+  }();
+  CHECK(sum == 1 + 2 + 3);
+}
+
+TEST_CASE("co_loop_api w macro sync") {
+  static auto sum = 0;
+  static_assert(!ca2co::is_iterator<std::optional<int>>);
+  static_assert(ca2co::is_iterator<ca2co::iterator<int>>);
+  using callback_awaiter_t = decltype(fixture::co_loop_api());
+  [&] -> ca2co::continuation<> {  // NOLINT
+    CA2CO_for_co_await(auto i, fixture::co_loop_api()) sum += i;
   }();
   CHECK(sum == 1 + 2 + 3);
 }
