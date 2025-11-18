@@ -18,6 +18,7 @@ Checks: "*,
         -misc-use-internal-linkage,
         -functionStatic,
         -misc-function-static
+        -readability-identifier-length
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''

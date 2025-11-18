@@ -32,7 +32,7 @@ struct overloads : Ts... {
 template <typename V>
 class iterator : public std::suspend_always {
  public:
-  using value_t = typename V;
+  using value_t = V;
   using optional_t = std::optional<value_t>;
   using get_value_t = std::function<optional_t()>;
 
@@ -62,8 +62,8 @@ class iterator : public std::suspend_always {
 };
 
 #define CA2CO_for_co_await(for_range_declaration, for_range_initializer) \
-  for (auto __i = co_await for_range_initializer; __i; co_await __i)     \
-    if (for_range_declaration = *__i; true)
+  for (auto ca2co_iterator__ = co_await for_range_initializer; ca2co_iterator__; co_await __i)     \
+    if ((for_range_declaration = *ca2co_iterator__); true)
 
 
 template <typename... Args>
@@ -118,7 +118,7 @@ class callback_awaiter {
  public:
   using callback_t = std::function<void(CallbackArgs...)>;
   using api_t = std::function<void(callback_t const&)>;
-  static constexpr bool is_iterator = is_iterator<CallbackArgs...>;
+  static constexpr bool is_iterator = ca2co::is_iterator<CallbackArgs...>;
   template <typename Api>
   callback_awaiter(synchronisation sync_or_async, Api api)
     requires is_noexept_callback_api<Api, CallbackArgs...>
