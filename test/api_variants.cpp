@@ -44,7 +44,7 @@ static_assert(ca2co::is_iterator<ca2co::iterator<int>>);
 
 void loop_callback_api_sync(
     std::function<void(ca2co::iterator<int>)> const& callback) noexcept {
-  for (auto i : std::ranges::iota_view(0, 4)) callback(std::optional{i});
+  for (auto i : std::ranges::iota_view(0, 4)) {callback(std::optional{i}); }
   callback({});
 }
 
@@ -57,7 +57,9 @@ void loop_callback_api_async(
   a_thread = std::thread{[=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(short_break);
-    for (auto i : std::ranges::iota_view(0, 4)) callback(std::optional{i});
+    for (auto i : std::ranges::iota_view(0, 4)) {
+      callback(std::optional{i});
+    }
     callback({});
   }};
 }
@@ -112,8 +114,8 @@ constexpr int is_six = 6;
 TEST_CASE("co_loop_api sync") {
   static auto sum = 0;
   [] -> ca2co::continuation<> {
-    for (auto __i = co_await fixture::co_loop_api_sync(); __i; co_await __i)
-      if (auto i = *__i; true) sum += i;
+    for (auto ii = co_await fixture::co_loop_api_sync(); ii; co_await ii)
+      if (auto i = *ii; true == true) sum += i;
   }();
   CHECK(sum == is_six);
 }

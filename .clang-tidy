@@ -17,8 +17,11 @@ Checks: "*,
         -misc-use-anonymous-namespace,
         -misc-use-internal-linkage,
         -functionStatic,
-        -misc-function-static
-        -readability-identifier-length
+        -misc-function-static,
+        -readability-identifier-length,
+        -hicpp-braces-around-statements,
+        -readability-braces-around-statements,
+        -readability-simplify-boolean-expr
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''

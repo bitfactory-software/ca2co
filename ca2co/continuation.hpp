@@ -62,8 +62,8 @@ class iterator : public std::suspend_always {
 };
 
 #define CA2CO_for_co_await(for_range_declaration, for_range_initializer) \
-  for (auto ca2co_iterator__ = co_await for_range_initializer; ca2co_iterator__; co_await __i)     \
-    if ((for_range_declaration = *ca2co_iterator__); true)
+  for (auto ca2co_iterator__ = co_await for_range_initializer; ca2co_iterator__; co_await ca2co_iterator__)     \
+    if (for_range_declaration = *ca2co_iterator__; true == true)
 
 
 template <typename... Args>
