@@ -9,6 +9,9 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
 #pragma GCC diagnostic ignored "-Wunused-function"
+#elif defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4127)
 #endif
 
 #include <coroutine>
