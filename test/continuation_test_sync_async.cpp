@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>  // NOLINT(misc-include-cleaner)
 #include <functional>
-#include <print>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -81,31 +81,31 @@ void api_async_callback_throws_in_background_thread(
 
 ca2co::continuation<int> test_1_async() {
   const int initalValue = 1;
-  std::println("Start test_1_async");
+  std::cout << "Start test_1_async\n";
   int x = co_await ca2co::callback_async<int>(&api_async);
   x += initalValue;
   CHECK(x == n_42);
-  std::println("test_1_async");
+  std::cout << "test_1_async\n";
   co_return x + 1;
 }
 ca2co::continuation<int> test_1_sync() {
   const int initalValue = 1;
-  std::println("Start test_1_sync");
+  std::cout << "Start test_1_sync\n";
   int x = n_41;
   x += initalValue;
   CHECK(x == n_42);
-  std::println("test_1_sync");
+  std::cout << "test_1_sync\n";
   co_return x + 1;
 }
 
 ca2co::continuation<int> test_1_sync_with_exception() {
-  std::println("Start test_1_sync_with_exception");
+  std::cout << "Start test_1_sync_with_exception\n";
   throw std::runtime_error("test_Exception");
   TEST_CODE_UNREACHABLE co_return n_42;
 }
 
 ca2co::continuation<int> test_1_async_with_exception() {
-  std::println("Start test_1_async_with_exception");
+  std::cout << "Start test_1_async_with_exception\n";
   const int x = co_await ca2co::callback_async<int>(&api_async);
   CHECK(x == n_41);
   throw std::runtime_error("test_Exception");
@@ -113,42 +113,42 @@ ca2co::continuation<int> test_1_async_with_exception() {
 }
 
 ca2co::continuation<double> test_2(auto&& test1) {  // NOLINT
-  std::println("Start test_2");
+  std::cout << "Start test_2\n";
   const auto x = co_await test1();
   CHECK(x == n_42 + 1);
-  std::println("test_2");
+  std::cout << "test_2\n";
   co_return x + 1.0;
 }
 
 ca2co::continuation<double> test_3(auto&& callbackContinuation) {  // NOLINT
-  std::println("Start test_3");
+  std::cout << "Start test_3\n";
   auto x = co_await test_2(callbackContinuation);
   CHECK(x == d_42 + 1.0 + 1.0);
-  std::println("test_3");
+  std::cout << "test_3\n";
   co_return x + 1.0;
 }
 
 ca2co::continuation<> test_4(auto&& callbackContinuation) {  // NOLINT
-  std::println("Start test_4");
+  std::cout << "Start test_4\n";
   auto x = co_await test_3(callbackContinuation);
   CHECK(x == d_42 + 1.0 + 1.0 + 1.0);
-  std::println("test_4");
+  std::cout << "test_4\n";
   continuations_run = true;
   co_return;
 }
 
 ca2co::continuation<double> test_4_return_value(
     auto&& callbackContinuation) {  // NOLINT
-  std::println("Start test_4_return_value");
+  std::cout << "Start test_4_return_value\n";
   auto x = co_await test_3(callbackContinuation);
   CHECK(x == d_42 + 1.0 + 1.0 + 1.0);
-  std::println("test_4_return_value");
+  std::cout << "test_4_return_value\n";
   continuations_run = true;
   co_return x;
 }
 
 ca2co::continuation<> test_5_catched(auto&& throws) {  // NOLINT
-  std::println("Start test_5_catched");
+  std::cout << "Start test_5_catched\n";
 
   continuations_run = false;
   try {
@@ -156,7 +156,7 @@ ca2co::continuation<> test_5_catched(auto&& throws) {  // NOLINT
     CHECK(false);
   } catch (std::runtime_error& e) {
     CHECK(e.what() == std::string("test_Exception"));
-    std::println("test_5_catched catched: {}", e.what());
+    std::cout << "test_5_catched catched: " << e.what() << "\n";
   }
   CHECK(!continuations_run);
 }
@@ -263,10 +263,10 @@ TEST_CASE("Asynchron") {
     spawn(fixture::test_4(&fixture::test_1_async));
   }
   CHECK(!fixture::continuations_run);
-  std::println("main after test_4");
+  std::cout << "main after test_4\n";
   fixture::a_thread.join();
   CHECK(fixture::continuations_run);
-  std::println("after join");
+  std::cout << "after join\n";
   CHECK(ca2co::continuation_promise_count == 0);
 }
 

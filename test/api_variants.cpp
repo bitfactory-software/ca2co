@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <chrono>  // NOLINT(misc-include-cleaner)
 #include <functional>
+#include <iostream>
 #include <optional>
-#include <print>
 #include <ranges>
 #include <string_view>
 #include <thread>
@@ -26,9 +26,9 @@ void async_api_string_view_int(
   a_thread = std::thread{[=] {
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(short_break);
-    std::println("sleep on thread {}", std::this_thread::get_id());
+    std::cout << "sleep on thread " << std::this_thread::get_id() << "\n";
     callback("hello world", answer_number);
-    std::println("after call to continuation async_api");
+    std::cout << "after call to continuation async_api" << "\n";
   }};
 }
 ca2co::continuation<std::string_view, int> co_async_api_string_view_int() {
@@ -44,7 +44,9 @@ static_assert(ca2co::is_iterator<ca2co::iterator<int>>);
 
 void loop_callback_api_sync(
     std::function<void(ca2co::iterator<int>)> const& callback) noexcept {
-  for (auto i : std::ranges::iota_view(0, 4)) {callback(std::optional{i}); }
+  for (auto i : std::ranges::iota_view(0, 4)) {
+    callback(std::optional{i});
+  }
   callback({});
 }
 
